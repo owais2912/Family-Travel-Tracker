@@ -1,18 +1,11 @@
 import express from "express";
 import bodyParser from "body-parser";
-import pg from "pg";
+import db from "./db.js";
+import dotenv from "dotenv";
 
+dotenv.config();
 const app = express();
-const port = 3000;
-
-const db = new pg.Client({
-  user: "postgres",
-  host: "localhost",
-  database: "world",
-  password: "1234",
-  port: 5432,
-});
-db.connect();
+const port = process.env.APP_PORT || 3000;
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
