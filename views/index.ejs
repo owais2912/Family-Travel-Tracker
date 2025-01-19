@@ -388,6 +388,9 @@
   <h2 class="total-count">Total Countries: <%=total%>
   </h2>
   <script>
+    import { Analytics } from '@vercel/analytics';
+    Analytics();
+    
     const country_codes = "<%= countries %>".split(",")
     country_codes.forEach(code => {
       document.getElementById(code).style.fill = "<%= color %>"
