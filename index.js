@@ -2,13 +2,15 @@ import express from "express";
 import bodyParser from "body-parser";
 import db from "./db.js";
 import dotenv from "dotenv";
+import path from "path";
 
 dotenv.config();
 
 const app = express();
 const port = process.env.APP_PORT || 3000;
+const __dirname = path.dirname(new URL(import.meta.url).pathname);
 
-app.set('views', './views');
+app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
