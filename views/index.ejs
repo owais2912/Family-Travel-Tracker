@@ -388,8 +388,8 @@
   <h2 class="total-count">Total Countries: <%=total%>
   </h2>
   <script>
-    import { Analytics } from '@vercel/analytics';
-    Analytics();
+    import { inject } from "@vercel/analytics"
+    inject();
     
     const country_codes = "<%= countries %>".split(",")
     country_codes.forEach(code => {
