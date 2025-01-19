@@ -13,7 +13,7 @@ const __dirname = path.dirname(new URL(import.meta.url).pathname);
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static("public"));
+app.use(express.static(__dirname + '/public'));
 
 let currentUserId = 1;
 
