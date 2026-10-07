@@ -1,32 +1,66 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Travel Tracker</title>
-  <link rel="stylesheet" href="./styles/main.css">
+  <title>Family Travel Tracker</title>
+  <link rel="stylesheet" href="/styles/main.css">
+  <style>
+    <% visitedCodes.forEach(function(code) { %>
+      .ag-canvas_svg path[id="<%= code %>"] { fill: <%= color %>; }
+    <% }); %>
+  </style>
 </head>
-
 <body>
-  <form class="tab-view tab-view-height-auto" action="/user" method="post">
-    <% users.forEach(function(user) { %>
-      <input type="submit" name="user" value="<%= user.id %>" id="<%= user.id %>">
-      <label for="<%= user.id %>" style="background-color: <%= user.color %>;">
-        <%= user.name %>
-      </label>
-      <% }); %>
+  <main class="app-shell">
+    <header class="top-bar">
+      <div class="brand">
+        <span class="brand-kicker">YOUR WORLD, TOGETHER</span>
+        <h1>Family Travel Tracker</h1>
+      </div>
+      <div class="family-controls">
+        <% if (users.length) { %>
+          <form action="/user" method="post" class="user-switcher">
+            <label for="selected-user">Viewing</label>
+            <select id="selected-user" name="user" onchange="this.form.submit()">
+              <% users.forEach(function(user) { %>
+                <option value="<%= user.id %>" <%= currentUser && user.id === currentUser.id ? 'selected' : '' %>><%= user.name %></option>
+              <% }); %>
+            </select>
+            <noscript><button type="submit">Switch</button></noscript>
+          </form>
+        <% } %>
+        <% if (canEdit) { %>
+          <form action="/lock" method="post"><button type="submit" class="secondary-button">Lock editing</button></form>
+        <% } else { %>
+          <button type="button" class="secondary-button" data-open-dialog="family-dialog">Unlock editing</button>
+        <% } %>
+        <button type="button" class="secondary-button" data-open-dialog="family-dialog">Manage family</button>
+      </div>
+    </header>
 
-        <input type="submit" name="add" value="new" id="tab">
-        <label for="tab">Add Family Member</label>
-
-  </form>
-
-  <form action="/add" method="post">
-    <input type="text" name="country" autofocus placeholder="<%= locals.error ? error :  'Enter country name'%>">
-    <button type="submit" style="background-color: <%= color %>;">Add</button>
-  </form>
-
+    <section class="tracker-panel" aria-label="Travel map">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">TRAVEL JOURNAL</p>
+          <h2><%= currentUser ? currentUser.name + "'s map" : "Start your family map" %></h2>
+        </div>
+        <span class="country-count"><strong><%= visitedCountries.length %></strong> <%= visitedCountries.length === 1 ? 'country' : 'countries' %> visited</span>
+      </div>
+      <% if (error) { %><p class="form-error" role="alert"><%= error %></p><% } %>
+      <% if (currentUser && canEdit) { %>
+        <form class="add-country" action="/add" method="post">
+          <label for="country-name">Add a country</label>
+          <div class="input-row">
+            <input id="country-name" name="country" type="text" placeholder="Enter country name" required autocomplete="off">
+            <button type="submit">Add country</button>
+          </div>
+        </form>
+      <% } else if (!currentUser) { %>
+        <p class="empty-prompt">Add a family member to start tracking travels.</p>
+      <% } else { %>
+        <p class="empty-prompt">Unlock editing to add countries to this map.</p>
+      <% } %>
   <section class="ag-canvas">
     <svg class="ag-canvas_svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
       version="1.1" viewBox="0 0 1008 651">
@@ -384,18 +418,86 @@
       <path id="ZW" title="Zimbabwe"
         d="M562.709,526.998L561.219,526.697L560.274,527.059L558.917,526.548L557.776,526.516L555.989,525.158L553.821,524.698L552.996,522.803L552.989,521.752L551.788,521.432L548.615,518.177L547.733,516.471L547.169,515.946L546.09,513.602L549.224,513.922L550.135,514.26L551.082,514.192L552.634,512.299L555.073,509.904L556.076,509.676L556.417,508.67L558.014,507.516L560.138,507.12L560.319,508.2L562.658,508.142L563.957,508.754L564.562,509.472L565.896,509.683L567.353,510.617L567.359,514.312L566.813,516.347L566.692,518.55L567.143,519.426L566.826,521.172L566.402,521.443L565.663,523.593z" />
     </svg>
-  </section>
-  <h2 class="total-count">Total Countries: <%=total%>
-  </h2>
+    </section>
+
+    <% if (currentUser && visitedCountries.length) { %>
+      <section class="visited-section" aria-labelledby="visited-title">
+        <div class="section-heading">
+          <h2 id="visited-title">Visited countries</h2>
+          <% if (canEdit) { %><span>Remove a country if it was added by mistake</span><% } %>
+        </div>
+        <ul class="visited-list">
+          <% visitedCountries.forEach(function(country) { %>
+            <li>
+              <span><span class="country-dot" style="background: <%= color %>"></span><%= country.country_name %></span>
+              <% if (canEdit) { %>
+                <form action="/remove-country" method="post">
+                  <input type="hidden" name="countryCode" value="<%= country.country_code.trim() %>">
+                  <button type="submit" class="text-button" aria-label="Remove <%= country.country_name %>">Remove</button>
+                </form>
+              <% } %>
+            </li>
+          <% }); %>
+        </ul>
+      </section>
+    <% } %>
+  </main>
+
+  <dialog id="family-dialog" class="family-dialog" aria-labelledby="family-dialog-title">
+    <div class="dialog-heading">
+      <div>
+        <p class="eyebrow">FAMILY</p>
+        <h2 id="family-dialog-title">Manage family</h2>
+      </div>
+      <button type="button" class="close-button" data-close-dialog aria-label="Close">&times;</button>
+    </div>
+    <% if (!canEdit) { %>
+      <form action="/unlock" method="post" class="unlock-form">
+        <label for="family-passcode">Family passcode</label>
+        <input id="family-passcode" name="passcode" type="password" required autocomplete="current-password" placeholder="Enter passcode">
+        <button type="submit">Unlock editing</button>
+      </form>
+      <p class="dialog-note">The map is viewable while editing is locked.</p>
+    <% } else { %>
+    <form action="/new" method="post" class="add-member-form">
+      <label for="member-name">Add family member</label>
+      <input id="member-name" name="name" type="text" maxlength="80" placeholder="Name" required>
+      <fieldset class="color-picker">
+        <legend>Choose a map color</legend>
+        <% ['red','green','yellow','olive','orange','teal','blue','violet','purple','pink'].forEach(function(option, index) { %>
+          <label class="color-option" title="<%= option %>">
+            <input type="radio" name="color" value="<%= option %>" <%= index === 0 ? 'required' : '' %>>
+            <span style="background: <%= option %>"></span>
+            <span class="sr-only"><%= option %></span>
+          </label>
+        <% }); %>
+      </fieldset>
+      <button type="submit">Add member</button>
+    </form>
+    <% } %>
+    <% if (users.length) { %>
+      <h3 class="member-list-title">Family members</h3>
+      <ul class="member-list">
+        <% users.forEach(function(user) { %>
+          <li>
+            <span><span class="country-dot" style="background: <%= ['red','green','yellow','olive','orange','teal','blue','violet','purple','pink','powderblue','indigo'].includes(user.color) ? user.color : 'teal' %>"></span><%= user.name %></span>
+            <% if (canEdit) { %>
+              <form action="/delete-user" method="post" onsubmit="return confirm('Delete this family member and all their visited countries?')">
+                <input type="hidden" name="userId" value="<%= user.id %>">
+                <button type="submit" class="text-button danger" aria-label="Delete <%= user.name %>">Delete</button>
+              </form>
+            <% } %>
+          </li>
+        <% }); %>
+      </ul>
+    <% } %>
+  </dialog>
   <script>
-    import { inject } from "@vercel/analytics"
-    inject();
-    
-    const country_codes = "<%= countries %>".split(",")
-    country_codes.forEach(code => {
-      document.getElementById(code).style.fill = "<%= color %>"
-    });
+    const dialog = document.getElementById('family-dialog');
+    document.querySelectorAll('[data-open-dialog]').forEach((button) => button.addEventListener('click', () => dialog.showModal()));
+    document.querySelector('[data-close-dialog]').addEventListener('click', () => dialog.close());
+    dialog.addEventListener('click', (event) => { if (event.target === dialog) dialog.close(); });
+    <% if (!users.length || (error && !canEdit)) { %>dialog.showModal();<% } %>
   </script>
 </body>
-
 </html>
